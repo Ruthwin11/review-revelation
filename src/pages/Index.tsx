@@ -2,37 +2,88 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { MoveRight, ThumbsUp, ThumbsDown, Meh, Loader2, Sparkles } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  BarChart2, 
+  ThumbsUp, 
+  ThumbsDown, 
+  Meh,
+  Star,
+  XCircle,
+  Loader2
+} from "lucide-react";
 import { motion } from "framer-motion";
 
+type SentimentResult = {
+  sentiment: "extremely_positive" | "positive" | "neutral" | "negative" | "extremely_negative";
+  score: number;
+  message: string;
+};
+
 const Index = () => {
+  const [productName, setProductName] = useState("");
   const [review, setReview] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{
-    sentiment: "positive" | "negative" | "neutral";
-    score: number;
-  } | null>(null);
+  const [result, setResult] = useState<SentimentResult | null>(null);
 
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case "positive":
-        return "text-green-500";
-      case "negative":
-        return "text-red-500";
-      default:
-        return "text-yellow-500";
+  const getSentimentDetails = (text: string): SentimentResult => {
+    const lowercaseText = text.toLowerCase();
+    
+    if (lowercaseText.includes("amazing") || lowercaseText.includes("excellent") || lowercaseText.includes("outstanding")) {
+      return {
+        sentiment: "extremely_positive",
+        score: 95,
+        message: "Extremely positive sentiment detected! The review shows exceptional satisfaction."
+      };
+    } else if (lowercaseText.includes("good") || lowercaseText.includes("nice") || lowercaseText.includes("great")) {
+      return {
+        sentiment: "positive",
+        score: 75,
+        message: "Positive sentiment detected. The customer appears satisfied."
+      };
+    } else if (lowercaseText.includes("okay") || lowercaseText.includes("average") || lowercaseText.includes("decent")) {
+      return {
+        sentiment: "neutral",
+        score: 50,
+        message: "Neutral sentiment detected. The review is balanced."
+      };
+    } else if (lowercaseText.includes("bad") || lowercaseText.includes("poor") || lowercaseText.includes("disappointed")) {
+      return {
+        sentiment: "negative",
+        score: 25,
+        message: "Negative sentiment detected. The customer appears unsatisfied."
+      };
+    } else if (lowercaseText.includes("terrible") || lowercaseText.includes("horrible") || lowercaseText.includes("worst")) {
+      return {
+        sentiment: "extremely_negative",
+        score: 5,
+        message: "Extremely negative sentiment detected! The review shows strong dissatisfaction."
+      };
     }
+    
+    return {
+      sentiment: "neutral",
+      score: 50,
+      message: "Neutral sentiment detected. The review appears balanced."
+    };
   };
 
   const getSentimentIcon = (sentiment: string) => {
     switch (sentiment) {
+      case "extremely_positive":
+        return <Star className="w-12 h-12 text-yellow-400" />;
       case "positive":
-        return <ThumbsUp className="w-12 h-12" />;
+        return <ThumbsUp className="w-12 h-12 text-green-500" />;
+      case "neutral":
+        return <Meh className="w-12 h-12 text-yellow-500" />;
       case "negative":
-        return <ThumbsDown className="w-12 h-12" />;
+        return <ThumbsDown className="w-12 h-12 text-red-500" />;
+      case "extremely_negative":
+        return <XCircle className="w-12 h-12 text-red-600" />;
       default:
-        return <Meh className="w-12 h-12" />;
+        return <Meh className="w-12 h-12 text-yellow-500" />;
     }
   };
 
@@ -40,69 +91,109 @@ const Index = () => {
     if (!review.trim()) return;
     
     setLoading(true);
-    // Temporary mock analysis - you'll need to connect to a real API later
+    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Simple mock sentiment analysis
-    const words = review.toLowerCase();
-    const positive = ['good', 'great', 'excellent', 'amazing', 'love'].some(word => words.includes(word));
-    const negative = ['bad', 'poor', 'terrible', 'hate', 'awful'].some(word => words.includes(word));
-    
-    setResult({
-      sentiment: positive ? "positive" : negative ? "negative" : "neutral",
-      score: Math.random() * 100
-    });
+    const result = getSentimentDetails(review);
+    setResult(result);
     setLoading(false);
   };
 
+  const ExampleButton = ({ text }: { text: string }) => (
+    <Button 
+      variant="outline" 
+      className="text-sm"
+      onClick={() => setReview(text)}
+    >
+      {text}
+    </Button>
+  );
+
   return (
-    <div className="min-h-screen p-8 bg-gradient-to-br from-[#f8f9fa] via-[#e9ecef] to-[#dee2e6] dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="max-w-2xl mx-auto space-y-8">
+    <div className="min-h-screen bg-black text-white p-8">
+      <div className="max-w-4xl mx-auto space-y-8">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
           className="text-center space-y-4"
         >
-          <div className="inline-block p-2 mb-4 rounded-full bg-gradient-to-r from-purple-400 via-pink-400 to-red-400">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center space-x-2 text-2xl font-bold">
+            <BarChart2 className="w-8 h-8 text-purple-500" />
+            <span>Product Review Sentiment Analysis</span>
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 bg-clip-text text-transparent">
-            Sentiment Analysis
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300">
-            Share your product review and let our AI analyze the sentiment
+          <p className="text-gray-400">
+            Analyze customer sentiment for any product reviews
           </p>
         </motion.div>
+
+        <Tabs defaultValue="single" className="w-full">
+          <TabsList className="w-full bg-gray-900/50 border border-gray-800">
+            <TabsTrigger value="single" className="w-1/2">Single Review</TabsTrigger>
+            <TabsTrigger value="batch" className="w-1/2">CSV Batch</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Card className="p-8 backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 shadow-xl">
+          <Card className="p-8 bg-gray-900/50 border border-gray-800 backdrop-blur-sm">
             <div className="space-y-6">
-              <Textarea
-                placeholder="Enter your product review here..."
-                className="min-h-[150px] text-lg bg-transparent backdrop-blur-sm border-2 transition-all focus:border-purple-400 dark:focus:border-purple-500"
-                value={review}
-                onChange={(e) => setReview(e.target.value)}
-              />
-              
-              <Button
-                className="w-full gap-3 text-lg h-14 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl"
-                onClick={analyzeSentiment}
-                disabled={!review.trim() || loading}
-              >
-                {loading ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <>
-                    Analyze Sentiment
-                    <MoveRight className="w-6 h-6" />
-                  </>
-                )}
-              </Button>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Product Name</h3>
+                <Input
+                  placeholder="e.g. iPhone 15, Samsung Galaxy S24"
+                  className="bg-black/50 border-gray-700"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                />
+                <p className="text-sm text-gray-400 mt-1">
+                  Enter the name of the product being reviewed
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Review Text</h3>
+                <Textarea
+                  placeholder="Enter product review text here..."
+                  className="min-h-[150px] bg-black/50 border-gray-700"
+                  value={review}
+                  onChange={(e) => setReview(e.target.value)}
+                />
+                
+                <div className="mt-4 space-y-4">
+                  <p className="text-sm text-gray-400">Or try an example review:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <ExampleButton text="This product is absolutely amazing!" />
+                    <ExampleButton text="Good product, works as expected." />
+                    <ExampleButton text="It's okay, nothing special." />
+                    <ExampleButton text="Poor quality, wouldn't recommend." />
+                    <ExampleButton text="This is the worst product ever!" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setReview("");
+                    setResult(null);
+                  }}
+                >
+                  Clear
+                </Button>
+                <Button
+                  className="bg-purple-600 hover:bg-purple-700"
+                  onClick={analyzeSentiment}
+                  disabled={!review.trim() || loading}
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : null}
+                  Analyze Review
+                </Button>
+              </div>
             </div>
           </Card>
         </motion.div>
@@ -111,37 +202,30 @@ const Index = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, type: "spring", bounce: 0.4 }}
           >
-            <Card className="p-8 backdrop-blur-lg bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 shadow-xl">
-              <motion.div 
-                className="text-center space-y-6"
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className={`${getSentimentColor(result.sentiment)} transform transition-all duration-300 hover:scale-110`}>
-                  {getSentimentIcon(result.sentiment)}
+            <Card className="p-8 bg-gray-900/50 border border-gray-800 backdrop-blur-sm">
+              <div className="text-center space-y-6">
+                {getSentimentIcon(result.sentiment)}
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold">
+                    {result.sentiment.split("_").map(word => 
+                      word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(" ")} Sentiment
+                  </h3>
+                  <p className="text-gray-400">{result.message}</p>
                 </div>
-                <div className="space-y-3">
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 bg-clip-text text-transparent">
-                    {result.sentiment.charAt(0).toUpperCase() + result.sentiment.slice(1)} Sentiment
-                  </h2>
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="h-2 w-48 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${result.score}%` }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500"
-                      />
-                    </div>
-                    <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
-                      {result.score.toFixed(1)}%
-                    </p>
-                  </div>
+                <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${result.score}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-red-500"
+                  />
                 </div>
-              </motion.div>
+                <p className="text-lg font-semibold">
+                  Confidence Score: {result.score}%
+                </p>
+              </div>
             </Card>
           </motion.div>
         )}
