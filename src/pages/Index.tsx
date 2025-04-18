@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   BarChart2, 
   ThumbsUp, 
@@ -12,7 +11,8 @@ import {
   Meh,
   Star,
   XCircle,
-  Loader2
+  Loader2,
+  History
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -20,6 +20,9 @@ type SentimentResult = {
   sentiment: "extremely_positive" | "positive" | "neutral" | "negative" | "extremely_negative";
   score: number;
   message: string;
+  productName: string;
+  review: string;
+  timestamp: string;
 };
 
 const Index = () => {
@@ -27,46 +30,66 @@ const Index = () => {
   const [review, setReview] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SentimentResult | null>(null);
+  const [history, setHistory] = useState<SentimentResult[]>([]);
 
   const getSentimentDetails = (text: string): SentimentResult => {
     const lowercaseText = text.toLowerCase();
+    const timestamp = new Date().toLocaleString();
     
     if (lowercaseText.includes("amazing") || lowercaseText.includes("excellent") || lowercaseText.includes("outstanding")) {
       return {
         sentiment: "extremely_positive",
         score: 95,
-        message: "Extremely positive sentiment detected! The review shows exceptional satisfaction."
+        message: "Extremely positive sentiment detected! The review shows exceptional satisfaction.",
+        productName,
+        review: text,
+        timestamp
       };
     } else if (lowercaseText.includes("good") || lowercaseText.includes("nice") || lowercaseText.includes("great")) {
       return {
         sentiment: "positive",
         score: 75,
-        message: "Positive sentiment detected. The customer appears satisfied."
+        message: "Positive sentiment detected. The customer appears satisfied.",
+        productName,
+        review: text,
+        timestamp
       };
     } else if (lowercaseText.includes("okay") || lowercaseText.includes("average") || lowercaseText.includes("decent")) {
       return {
         sentiment: "neutral",
         score: 50,
-        message: "Neutral sentiment detected. The review is balanced."
+        message: "Neutral sentiment detected. The review is balanced.",
+        productName,
+        review: text,
+        timestamp
       };
     } else if (lowercaseText.includes("bad") || lowercaseText.includes("poor") || lowercaseText.includes("disappointed")) {
       return {
         sentiment: "negative",
         score: 25,
-        message: "Negative sentiment detected. The customer appears unsatisfied."
+        message: "Negative sentiment detected. The customer appears unsatisfied.",
+        productName,
+        review: text,
+        timestamp
       };
     } else if (lowercaseText.includes("terrible") || lowercaseText.includes("horrible") || lowercaseText.includes("worst")) {
       return {
         sentiment: "extremely_negative",
         score: 5,
-        message: "Extremely negative sentiment detected! The review shows strong dissatisfaction."
+        message: "Extremely negative sentiment detected! The review shows strong dissatisfaction.",
+        productName,
+        review: text,
+        timestamp
       };
     }
     
     return {
       sentiment: "neutral",
       score: 50,
-      message: "Neutral sentiment detected. The review appears balanced."
+      message: "Neutral sentiment detected. The review appears balanced.",
+      productName,
+      review: text,
+      timestamp
     };
   };
 
@@ -94,8 +117,9 @@ const Index = () => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const result = getSentimentDetails(review);
-    setResult(result);
+    const sentimentResult = getSentimentDetails(review);
+    setResult(sentimentResult);
+    setHistory(prev => [sentimentResult, ...prev].slice(0, 5)); // Keep last 5 analyses
     setLoading(false);
   };
 
@@ -125,13 +149,6 @@ const Index = () => {
             Analyze customer sentiment for any product reviews
           </p>
         </motion.div>
-
-        <Tabs defaultValue="single" className="w-full">
-          <TabsList className="w-full bg-gray-900/50 border border-gray-800">
-            <TabsTrigger value="single" className="w-1/2">Single Review</TabsTrigger>
-            <TabsTrigger value="batch" className="w-1/2">CSV Batch</TabsTrigger>
-          </TabsList>
-        </Tabs>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -229,9 +246,53 @@ const Index = () => {
             </Card>
           </motion.div>
         )}
+
+        {history.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="p-8 bg-gray-900/50 border border-gray-800 backdrop-blur-sm">
+              <div className="space-y-6">
+                <div className="flex items-center space-x-2">
+                  <History className="w-5 h-5 text-purple-500" />
+                  <h3 className="text-xl font-semibold">Analysis History</h3>
+                </div>
+                <div className="space-y-4">
+                  {history.map((item, index) => (
+                    <div 
+                      key={index}
+                      className="p-4 bg-black/30 rounded-lg border border-gray-800"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <h4 className="font-semibold">{item.productName}</h4>
+                          <p className="text-sm text-gray-400">{item.review}</p>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500">{item.timestamp}</span>
+                            <span className="text-xs px-2 py-1 rounded-full bg-purple-500/20 text-purple-300">
+                              {item.sentiment.split("_").map(word => 
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                              ).join(" ")}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {getSentimentIcon(item.sentiment)}
+                          <span className="text-sm font-semibold">{item.score}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
       </div>
     </div>
   );
 };
 
 export default Index;
+
